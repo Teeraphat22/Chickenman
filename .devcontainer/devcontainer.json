@@ -1,0 +1,25 @@
+{
+  "name": "MilkLab Solopreneur Course",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "google.geminicodeassist",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-toolsai.jupyter"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "editor.formatOnSave": true
+      }
+    }
+  },
+  "postCreateCommand": "pip install --user -r requirements.txt && python scripts/verify_setup.py",
+  "remoteEnv": {
+    "PYTHONUNBUFFERED": "1"
+  }
+}

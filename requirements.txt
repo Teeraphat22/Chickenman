@@ -1,0 +1,16 @@
+# S1
+google-genai>=0.4.0
+python-dotenv>=1.0.0
+
+# S2
+gspread>=6.0.0
+google-auth>=2.30.0
+requests>=2.31.0
+
+# S3
+streamlit>=1.35.0
+sentence-transformers>=3.0.0
+faiss-cpu>=1.8.0
+
+# Dev tools
+pytest>=8.0.0

@@ -1,0 +1,45 @@
+name: Daily Sales Logger
+
+on:
+  schedule:
+    # 13:00 UTC = 20:00 ICT (Thailand)
+    - cron: '0 13 * * *'
+  workflow_dispatch:
+    inputs:
+      menu:
+        description: 'ชื่อเมนู'
+        required: true
+        default: 'นมหมีฮอกไกโด'
+      qty:
+        description: 'จำนวน'
+        required: true
+        default: '1'
+      price:
+        description: 'ราคา'
+        required: true
+        default: '65'
+
+jobs:
+  log-sale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Run sales_logger
+        env:
+          GOOGLE_SHEETS_CREDENTIALS: ${{ secrets.GOOGLE_SHEETS_CREDENTIALS }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          LINE_CHANNEL_TOKEN: ${{ secrets.LINE_CHANNEL_TOKEN }}
+        run: |
+          python sales_logger.py \
+            --menu "${{ github.event.inputs.menu || 'นมหมีฮอกไกโด' }}" \
+            --qty ${{ github.event.inputs.qty || 1 }} \
+            --price ${{ github.event.inputs.price || 65 }}
