@@ -34,10 +34,10 @@ def append_to_sheet(menu: str, qty: int, price: float) -> dict:
     sheet_id = os.environ.get("GOOGLE_SHEET_ID_CHICKENMAN")
 
     if not creds_json:
-        raise RuntimeError("ไม่พบ GOOGLE_SHEETS_CREDENTIALS")
+        raise RuntimeError("ไม่พบ GOOGLE_SHEETS_CREDENTIALS_CHICKENMAN")
 
     if not sheet_id:
-        raise RuntimeError("ไม่พบ GOOGLE_SHEET_ID")
+        raise RuntimeError("ไม่พบ GOOGLE_SHEET_ID_CHICKENMAN")
 
 
     credentials_info = json.loads(creds_json)
