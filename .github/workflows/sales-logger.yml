@@ -3,13 +3,13 @@ name: Daily Sales Logger
 on:
   schedule:
     # 13:00 UTC = 20:00 ICT (Thailand)
-    - cron: '0 13 * * *'
+    - cron: '0 07 * * *'
   workflow_dispatch:
     inputs:
       menu:
         description: 'ชื่อเมนู'
         required: true
-        default: 'นมหมีฮอกไกโด'
+        default: 'ไก่ย่าง'
       qty:
         description: 'จำนวน'
         required: true
@@ -17,7 +17,7 @@ on:
       price:
         description: 'ราคา'
         required: true
-        default: '65'
+        default: '10'
 
 jobs:
   log-sale:
@@ -41,6 +41,6 @@ jobs:
           LINE_CHANNEL_TOKEN: ${{ secrets.LINE_CHANNEL_TOKEN }}
         run: |
           python sales_logger.py \
-            --menu "${{ github.event.inputs.menu || 'นมหมีฮอกไกโด' }}" \
+            --menu "${{ github.event.inputs.menu || 'ไก่ย่าง' }}" \
             --qty ${{ github.event.inputs.qty || 1 }} \
-            --price ${{ github.event.inputs.price || 65 }}
+            --price ${{ github.event.inputs.price || 10 }}

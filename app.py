@@ -35,9 +35,9 @@ def generate_answer(query: str, context_chunks: list[str]) -> str:
 
 
 def main():
-    st.set_page_config(page_title="MilkLab° RAG", page_icon="🥛")
-    st.title("MilkLab° RAG Chatbot")
-    st.caption("ถามอะไรเกี่ยวกับ MilkLab ได้ ตอบจาก menu_kb.md")
+    st.set_page_config(page_title="Chickenman RAG", page_icon="🐔")
+    st.title("Chickenman RAG Chatbot")
+    st.caption("ถามอะไรเกี่ยวกับ Chickenman ได้ ตอบจาก menu_kb.md")
 
     try:
         model, index, chunks = load_index()
@@ -52,7 +52,7 @@ def main():
         with st.chat_message(msg["role"]):
             st.write(msg["content"])
 
-    if prompt := st.chat_input("ถามอะไรเกี่ยวกับ MilkLab"):
+    if prompt := st.chat_input("ถามอะไรเกี่ยวกับ Chickenman"):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.write(prompt)
