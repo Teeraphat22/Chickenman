@@ -37,7 +37,7 @@ def generate_answer(query: str, context_chunks: list[str]) -> str:
 def main():
     st.set_page_config(page_title="Chickenman RAG", page_icon="🐔")
     st.title("Chickenman RAG Chatbot")
-    st.caption("ถามอะไรเกี่ยวกับ Chickenman ได้ ตอบจาก menu_kb.md")
+    st.caption("ถามอะไรเกี่ยวกับ Chickenman ได้ ตอบจาก chickenman_kb.md")
 
     try:
         model, index, chunks = load_index()
