@@ -82,11 +82,11 @@ def send_notification(message: str) -> str:
 
     import requests
 
-    token = os.environ.get("TELEGRAM_BOT_TOKEN")
-    chat_id = os.environ.get("TELEGRAM_CHAT_ID")
+    token = os.environ.get("TELEGRAM_BOT_TOKEN_CHICKENMAN")
+    chat_id = os.environ.get("TELEGRAM_CHAT_ID_CHICKENMAN")
 
     if not token or not chat_id:
-        raise RuntimeError("ไม่พบ TELEGRAM_BOT_TOKEN หรือ TELEGRAM_CHAT_ID")
+        raise RuntimeError("ไม่พบ TELEGRAM_BOT_TOKEN_CHICKENMAN หรือ TELEGRAM_CHAT_ID_CHICKENMAN")
 
     url = f"https://api.telegram.org/bot{token}/sendMessage"
 
@@ -105,11 +105,11 @@ def send_notification(message: str) -> str:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="MilkLab Sales Logger")
+    parser = argparse.ArgumentParser(description="chickenman Sales Logger")
     parser.add_argument("--menu", required=True, help="ชื่อเมนู")
-    parser.add_argument("--qty", type=int, required=True, help="จำนวนขวด")
+    parser.add_argument("--qty", type=int, required=True, help="ไม้")
     parser.add_argument("--price", type=float,
-                        required=True, help="ราคาต่อขวด")
+                        required=True, help="ราคาต่อไม้")
     args = parser.parse_args()
 
     try:
