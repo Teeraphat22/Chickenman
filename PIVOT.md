@@ -36,3 +36,12 @@
 | หัวใจไก่ | 10 บาท | |
 | ไส้หมู | 10 บาท | |
 | หมูแดดเดียว | 10 บาท | |
+
+## Testing
+
+ทดสอบ chatbot ด้วย 5 คำถามเกี่ยวกับ Chickenman ผ่าน Streamlit Cloud deployment
+ทดสอบ agent_harness.py ด้วย tool query_inventory เพื่อแก้ปัญหาตอบราคาลูกค้าไม่ทัน
+
+## Deploy URL
+
+- Streamlit Cloud: https://chickenman-rag.streamlit.app (หรือ URL จริงที่ deploy สำเร็จ)
