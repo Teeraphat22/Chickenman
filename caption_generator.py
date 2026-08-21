@@ -14,7 +14,7 @@ from google import genai
 
 
 PROMPT_TEMPLATE = """\
-คุณคือ social media manager ของร้าน CHICKENAMN ร้านไก่ยางที่มีเอกลักษณ์เฉพาะตัว
+คุณคือ social media manager ของร้าน Chickenman ร้านไก่ย่างที่มีเอกลักษณ์เฉพาะตัว
 
 จงเขียนแคปชั่นภาษาไทย 2 ถึง 3 ประโยคโปรโมตเมนู: {menu}
 

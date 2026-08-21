@@ -1,9 +1,10 @@
-"""MilkLab Agent Harness (S2)."""
+"""Chickenman Agent Harness (S2)."""
 
 import argparse
 import json
 import os
 import sys
+from datetime import datetime
 
 from dotenv import load_dotenv
 from google import genai
@@ -13,7 +14,6 @@ from sales_logger import append_to_sheet, send_notification
 import gspread
 from google.oauth2.service_account import Credentials
 
-from datetime import datetime
 
 TOOL_SCHEMA = [
     {
@@ -23,7 +23,7 @@ TOOL_SCHEMA = [
             "type": "object",
             "properties": {
                 "menu": {"type": "string", "description": "ชื่อเมนู"},
-                "qty": {"type": "integer", "description": "จำนวนที่ขาย"},
+                "qty": {"type": "integer", "description": "จำนวนที่ขาย (ไม้/ห่อ)"},
                 "price": {"type": "number", "description": "ราคาต่อหน่วย"},
             },
             "required": ["menu", "qty", "price"],
@@ -51,14 +51,52 @@ TOOL_SCHEMA = [
             "required": ["message"],
         },
     },
+    {
+        "name": "query_inventory",
+        "description": "เช็คจำนวนวัตถุดิบ/เมนูคงเหลือในสต็อก",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "item": {"type": "string", "description": "ชื่อเมนูหรือวัตถุดิบที่ต้องการเช็คสต็อก"},
+            },
+            "required": ["item"],
+        },
+    },
 ]
 
-ALLOWED_TOOLS = ["log_sale", "query_sales", "send_alert"]
+ALLOWED_TOOLS = ["log_sale", "query_sales", "send_alert", "query_inventory"]
 
 TRACE_LOG_FILE = "agent_trace.log"
 
-# ---------- TODO 1 ----------
+# สต็อกจำลอง (ไม้/ห่อ) - ในระบบจริงควรดึงจาก Google Sheet แยกต่างหาก
+INVENTORY = {
+    "ไก่ย่างไม้เล็ก": 40,
+    "อกไก่ไม้ใหญ่": 20,
+    "หมูนมสด": 35,
+    "หมูชิ้น": 35,
+    "ตับไก่": 25,
+    "ตูดไก่": 25,
+    "หนังไก่": 30,
+    "แหนมหมู": 15,
+    "ไส้อั่วเผ็ดน้อย": 20,
+    "ไส้อั่วเผ็ดมาก": 20,
+    "ส้มย่าง": 15,
+    "แจ่วพลิกดับ": 10,
+    "ข้าวเหนียวห่อเล็ก": 50,
+    "ข้าวเหนียวห่อใหญ่": 30,
+    "ปลาหมึก": 10,
+    "ไส้กรอกหมูกระเทียม": 20,
+    "ไส้กรอกหมูวุ้นเส้น": 20,
+    "ไส้กรอกอีสานหมู": 15,
+    "ปีกไก่": 25,
+    "หัวใจไก่": 20,
+    "ไส้หมู": 20,
+    "หมูแดดเดียว": 15,
+}
+
+
 def parse_command(cmd: str, api_key: str | None = None) -> dict:
+    """ส่ง cmd ไป Gemini พร้อม TOOL_SCHEMA ขอให้ตอบเป็น tool call จริง (function calling)"""
     api_key = api_key or os.environ.get("GOOGLE_API_KEY")
     if not api_key:
         raise RuntimeError("ไม่พบ GOOGLE_API_KEY")
@@ -97,36 +135,6 @@ def parse_command(cmd: str, api_key: str | None = None) -> dict:
             return {"tool": fn.name, "args": args}
 
     raise RuntimeError(f"Gemini ไม่ได้เรียก tool ใดๆ: {response.text}")
-    """ส่ง cmd ไป Gemini พร้อม TOOL_SCHEMA ขอให้ตอบเป็น tool call จริง (function calling)"""
-    api_key = api_key or os.environ.get("GOOGLE_API_KEY")
-    if not api_key:
-        raise RuntimeError("ไม่พบ GOOGLE_API_KEY")
-
-    client = genai.Client(api_key=api_key)
-    tool = types.Tool(function_declarations=TOOL_SCHEMA)
-    config = types.GenerateContentConfig(tools=[tool])
-
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=f"แปลงคำสั่งนี้ให้เรียกใช้ tool ที่เหมาะสมที่สุด: {cmd}",
-        config=config,
-    )
-
-    try:
-        parts = response.candidates[0].content.parts
-    except (IndexError, AttributeError) as e:
-        raise RuntimeError(f"Gemini ไม่ตอบผลลัพธ์ที่ใช้ได้: {e}")
-
-    for part in parts:
-        if part.function_call:
-            fn = part.function_call
-            args = dict(fn.args)
-            # Gemini บางทีส่ง qty มาเป็น float (เช่น 2.0) ต้อง cast เป็น int
-            if "qty" in args and isinstance(args["qty"], float):
-                args["qty"] = int(args["qty"])
-            return {"tool": fn.name, "args": args}
-
-    raise RuntimeError(f"Gemini ไม่ได้เรียก tool ใดๆ: {response.text}")
 
 
 # ---------- Tool implementations ----------
@@ -155,7 +163,7 @@ def _tool_query_sales(args):
 
     creds = Credentials.from_service_account_info(
         json.loads(os.environ["GOOGLE_SHEETS_CREDENTIALS_CHICKENMAN"]),
-        scopes=["https://www.googleapis.com/auth/spreadsheets","https://www.googleapis.com/auth/drive"],
+        scopes=["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"],
     )
     gc = gspread.authorize(creds)
     sheet_id = os.environ["GOOGLE_SHEET_ID_CHICKENMAN"]
@@ -178,14 +186,28 @@ def _tool_send_alert(args):
     return f"ส่งแจ้งเตือนแล้ว: {message}"
 
 
+def _tool_query_inventory(args):
+    item = args.get("item")
+    if not item or not str(item).strip():
+        raise ValueError("item ห้ามว่าง")
+
+    stock = INVENTORY.get(item)
+    if stock is None:
+        return f"ไม่พบเมนู '{item}' ในระบบสต็อก"
+
+    if stock <= 5:
+        return f"{item} เหลือ {stock} ไม้/ห่อ (สต็อกใกล้หมด ควรเติมด่วน)"
+    return f"{item} เหลือ {stock} ไม้/ห่อ"
+
+
 TOOL_FUNCS = {
     "log_sale": _tool_log_sale,
     "query_sales": _tool_query_sales,
     "send_alert": _tool_send_alert,
+    "query_inventory": _tool_query_inventory,
 }
 
 
-# ---------- TODO 2 ----------
 def dispatch_tool(tool_call: dict) -> str:
     """เรียก tool ตาม tool_call["tool"] ด้วย args จริง — whitelist + validate ก่อน execute"""
     name = tool_call.get("tool")
@@ -198,27 +220,6 @@ def dispatch_tool(tool_call: dict) -> str:
     return func(args)
 
 
-def main() -> int:
-    load_dotenv()
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--cmd", required=True, help="คำสั่งภาษาไทย")
-    args = parser.parse_args()
-
-    print(f"[USER] {args.cmd}")
-
-    # ---------- TODO 3 ----------
-    try:
-        tool_call = parse_command(args.cmd)
-        print(f"[LLM]  tool={tool_call['tool']} args={tool_call['args']}")
-
-        result = dispatch_tool(tool_call)
-        print(f"[TOOL] {tool_call['tool']} {result}")
-        print(f"[USER] ← {result}")
-        return 0
-    except Exception as e:
-        print(f"[TOOL-ERROR] {e}")
-        print(f"[USER] ← ล้มเหลว: {e}")
-        return 1
 def log_trace(event_type: str, content) -> None:
     """บันทึก event ลง agent_trace.log"""
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -228,7 +229,6 @@ def log_trace(event_type: str, content) -> None:
     with open(TRACE_LOG_FILE, "a", encoding="utf-8") as f:
         f.write(line)
 
-    """main() ให้เรียก log_trace() ทุกจุดของ flow"""
 
 def main() -> int:
     load_dotenv()
